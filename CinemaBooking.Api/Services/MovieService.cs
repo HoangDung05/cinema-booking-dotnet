@@ -1,10 +1,10 @@
 ﻿using CinemaBooking.Api.Data;
-using CinemaBooking.Models;
+using CinemaBooking.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using CinemaBooking.Api.Exceptions;
 using MySql.Data.MySqlClient;
 
-namespace CinemaBooking.Services
+namespace CinemaBooking.Api.Services
 {
     public class MovieService : IMovieService
     {

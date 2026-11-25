@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using CinemaBooking.Models;
+using CinemaBooking.Api.Models;
 namespace CinemaBooking.Api.DTOs.Movies
 {
     public class CreateMovieRequest

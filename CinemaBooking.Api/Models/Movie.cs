@@ -1,4 +1,4 @@
-﻿namespace CinemaBooking.Models
+﻿namespace CinemaBooking.Api.Models
 {
     public class Movie
     {

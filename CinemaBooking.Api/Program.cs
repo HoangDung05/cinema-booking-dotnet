@@ -1,7 +1,7 @@
 using CinemaBooking.Api.Data;
-using CinemaBooking.Services;
+using CinemaBooking.Api.Services;
 using Microsoft.EntityFrameworkCore;
-using CinemaBooking.Models;
+using CinemaBooking.Api.Models;
 namespace CinemaBooking.Api
 {
     public class Program
@@ -83,9 +83,14 @@ namespace CinemaBooking.Api
                     var movies = await context.Movies.AsNoTracking().Where(b => b.Title.Contains(keyword)).ToListAsync();
                     return Results.Ok(movies);
                 });
-                
-                
+
+                app.MapGet("/dev/showtimes-count", async (CinemaDbContext db) =>
+                {
+                    var count = await db.Showtimes.CountAsync();
+                    return Results.Ok(new { count });
+                });
             }
+
 
             app.UseHttpsRedirection();
 

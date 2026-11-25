@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace CinemaBooking.Models
+namespace CinemaBooking.Api.Models
 {
     [JsonConverter(typeof(JsonStringEnumConverter<MovieStatus>))]
     public enum MovieStatus
