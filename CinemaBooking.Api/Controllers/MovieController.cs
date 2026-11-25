@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using CinemaBooking.Api.Services;
 using CinemaBooking.Api.Models;
 using CinemaBooking.Api.DTOs.Movies;
 using CinemaBooking.Api.Exceptions;
+using CinemaBooking.Api.Interfaces;
 
 namespace CinemaBooking.Api.Controllers;
 

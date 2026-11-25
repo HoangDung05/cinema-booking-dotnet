@@ -3,6 +3,7 @@ using CinemaBooking.Api.Models;
 using Microsoft.EntityFrameworkCore;
 using CinemaBooking.Api.Exceptions;
 using MySql.Data.MySqlClient;
+using CinemaBooking.Api.Interfaces;
 
 namespace CinemaBooking.Api.Services
 {

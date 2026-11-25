@@ -1,7 +1,7 @@
 ﻿using System;
 using CinemaBooking.Api.Models;
 
-namespace CinemaBooking.Api.Services
+namespace CinemaBooking.Api.Interfaces
 {
     public interface IMovieService
     {
