@@ -2,6 +2,7 @@ using CinemaBooking.Api.Data;
 using CinemaBooking.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using CinemaBooking.Api.Models;
+using CinemaBooking.Api.Interfaces;
 namespace CinemaBooking.Api
 {
     public class Program
@@ -15,6 +16,7 @@ namespace CinemaBooking.Api
             builder.Services.AddControllers();
             
             builder.Services.AddScoped<IMovieService, MovieService>();
+            builder.Services.AddScoped<IShowtimeService, ShowtimeService>();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
