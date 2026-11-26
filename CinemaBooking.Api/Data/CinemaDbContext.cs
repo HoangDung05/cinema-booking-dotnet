@@ -15,6 +15,8 @@ namespace CinemaBooking.Api.Data
         public DbSet<Room> Rooms { get; set; } = null!;
         public DbSet<Showtime> Showtimes { get; set; } = null!;
         public DbSet<Seat> Seats { get; set; } = null!;
+        public DbSet<Booking> Bookings { get; set; } = null!;
+        public DbSet<BookingDetail> BookingDetails { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,8 +105,47 @@ namespace CinemaBooking.Api.Data
                       .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(s => new { s.RoomId, s.SeatNumber }).IsUnique();
             });
+
+            modelBuilder.Entity<Booking>(entity =>
+            {
+                entity.ToTable("bookings");
+                entity.HasKey(b => b.Id);
+                entity.Property(b => b.Id).ValueGeneratedOnAdd();
+                entity.Property(b => b.UserId).HasColumnName("user_id").IsRequired(false);
+                entity.Property(b => b.ShowtimeId).HasColumnName("showtime_id").IsRequired();
+                entity.Property(b => b.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(38,2)").IsRequired(false);
+                entity.Property(b => b.Status).HasColumnName("status").HasConversion<string>().IsRequired().HasDefaultValue(BookingStatus.PENDING);
+                entity.Property(b => b.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp").HasDefaultValueSql("CURRENT_TIMESTAMP").IsRequired(false);
+                entity.Property(b => b.VoucherId).HasColumnName("voucher_id").IsRequired(false);
+                entity.Property(b => b.DiscountAmount).HasColumnName("discount_amount").HasColumnType("decimal(38,2)").IsRequired(false);
+                entity.Property(b => b.GuestEmail).HasColumnName("guest_email").HasMaxLength(255).IsRequired(false);
+                entity.HasOne(b => b.Showtime)
+                      .WithMany()
+                      .HasForeignKey(b => b.ShowtimeId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<BookingDetail>(entity =>
+            {
+                entity.ToTable("booking_details");
+                entity.HasKey(bd => bd.Id);
+                entity.Property(bd => bd.Id).ValueGeneratedOnAdd();
+                entity.Property(bd => bd.BookingId).HasColumnName("booking_id").IsRequired();
+                entity.Property(bd => bd.SeatId).HasColumnName("seat_id").IsRequired();
+                entity.Property(bd => bd.PriceAtBooking).HasColumnName("price_at_booking").HasColumnType("decimal(38,2)").IsRequired();
+                entity.HasOne(bd => bd.Booking)
+                      .WithMany()
+                      .HasForeignKey(bd => bd.BookingId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(bd => bd.Seat)
+                      .WithMany()
+                      .HasForeignKey(bd => bd.SeatId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(bd => new { bd.BookingId, bd.SeatId }).IsUnique();
+            });
         }
 
+        
         
     }
 }
