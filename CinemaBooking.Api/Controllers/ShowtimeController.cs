@@ -58,5 +58,37 @@ namespace CinemaBooking.Api.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ShowtimeResponse>> UpdateShowtime(int id, [FromBody] UpdateShowtimeRequest request)
+        {
+            try
+            {
+                var showtime = await _showtimeService.UpdateShowtimeAsync(id, request);
+                if (showtime == null)
+                {
+                    return NotFound();
+                }
+                var response = new ShowtimeResponse
+                {
+                    Id = showtime.Id,
+                    StartTime = showtime.StartTime,
+                    EndTime = showtime.EndTime,
+                    Price = showtime.Price,
+                    MovieTitle = showtime.Movie.Title,
+                    RoomName = showtime.Room.Name,
+                    CinemaName = showtime.Room.Cinema.Name
+                };
+                return Ok(response);
+            }
+            catch (ShowtimeConflictException ex)
+            {
+                return Conflict(new { Message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
     }
 }

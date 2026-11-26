@@ -1,6 +1,6 @@
 # BÀN GIAO LỘ TRÌNH HỌC .NET — CINEMA BOOKING
 
-**Cập nhật:** 19/11/2026  
+**Cập nhật:** 26/11/2026  
 **Mục đích:** Dán/tải file này vào một cuộc trò chuyện ChatGPT mới, kể cả trên tài khoản khác, để tiếp tục học mà không phải bắt đầu lại.
 
 > **Chỉ dẫn cho trợ lý ChatGPT mới:** Hãy coi tài liệu này là bản bàn giao tiến độ. Giữ nguyên các bài đã hoàn thành, không bắt học lại. Bám sát repository Spring Boot gốc khi chuyển sang ASP.NET Core. Nếu cần kết luận chính xác về một lớp/bảng chưa được cung cấp, yêu cầu người học gửi file hoặc kết quả SQL tương ứng; không tự đoán cấu trúc. Trả lời bằng **tiếng Việt**, lý thuyết **ngắn gọn, có ví dụ dễ hiểu**, dành **~80% cho thực hành**, cho người học tự code trước khi chấm, review trực tiếp file, chấm thang **10**, chỉ rõ lỗi và cách sửa, và hiển thị **thanh/nhãn tiến độ** từng buổi. Không tự nhảy sang bài tiếp theo khi chưa đạt điều kiện, trừ khi người học yêu cầu. Tránh giao Console App, endpoint giả hoặc bài tập không liên quan Cinema Booking.
@@ -24,20 +24,19 @@
 | **1** | C# / ASP.NET Core nền tảng, API Movie từ dữ liệu trong RAM | **100% (7/7), tổng kết ~9.5/10** |
 | **2** | EF Core + MySQL, DbContext, Entity Mapping, LINQ, async/await | **100% (7/7)**; lý thuyết Bài 2.7 **8.5/10**, thực hành **10/10** |
 | **3** | CRUD Movie, DTO, validation, xử lý lỗi HTTP | **100% (6/6)**; bài kiểm thử End-to-End **10/10** |
-| **4** | Quan hệ và chức năng suất chiếu (Showtime) | **0% (0/6)**; vừa bắt đầu **Bài 4.1**, CHƯA có kết quả cấu trúc DB |
+| **4** | Showtime Management: GET, POST, PUT, DELETE, kiểm thử | **Đang thực hiện**; GET và POST hoàn thành, PUT đã code Controller/Service và đang kiểm thử Postman |
 
-**Điểm dừng hiện tại: Buổi 4 — Bài 4.1: khảo sát cấu trúc database cho suất chiếu.** Không bắt đầu thẳng Bài 4.2 nếu chưa có thông tin thực tế về bảng và Java Entity.
+**Điểm dừng hiện tại:** Buổi 4 — **Showtime Management, kiểm thử PUT trong Postman**. Không học lại Buổi 1–3.
 
-### Buổi 4 dự kiến
+### Buổi 4 – các mốc
 
-1. **4.1** Phân tích bảng/quan hệ MySQL và đối chiếu Java Entity (đang thực hiện).
-2. **4.2** Viết Entity C# và EF Core Foreign Key/Navigation Mapping.
-3. **4.3** Truy vấn suất chiếu, viết API GET.
-4. **4.4** Thêm suất chiếu, viết API POST.
-5. **4.5** Cập nhật/xóa và Validation.
-6. **4.6** Kiểm thử tích hợp và tổng kết.
+1. **GET Showtime:** truy vấn danh sách, Include Movie/Room/Cinema và trả DTO — đã hoàn thành.
+2. **POST Showtime:** DTO validation, kiểm tra Movie/Room tồn tại, tính EndTime từ Movie.Duration, kiểm tra trùng lịch, transaction và khóa Room — đã code và kiểm thử thành công.
+3. **PUT Showtime:** DTO, Interface/Service, Controller — đã code; Build và kiểm thử Postman cần xác nhận tiếp.
+4. **DELETE Showtime:** chưa bắt đầu.
+5. **Kiểm thử tích hợp:** kiểm thử các trường hợp thành công, 400, 404, 409; tổng kết và commit — chưa hoàn thành.
 
-Đây là lộ trình đề xuất, **cần chỉnh theo chức năng/thực thể thật của dự án gốc** sau khi kiểm tra, không giả định bảng tên `showtimes` chắc chắn tồn tại.
+Tiến độ Buổi 4 không nên tăng/đánh dấu hoàn thành chỉ vì đã viết code; cần dựa trên Build và kết quả kiểm thử thực tế.
 
 ## 3. Trạng thái dự án Cinema Booking .NET hiện tại
 
@@ -134,6 +133,52 @@ entity.Property(s => s.ReleaseDate)
 - Đã kiểm thử DELETE ID không tồn tại → 404; DELETE hợp lệ → 204; GET lại → 404.
 - **HTTP 409 chưa được kiểm thử tích hợp**, vì chưa có một trường hợp khóa ngoại thực tế phù hợp; không tuyên bố đã test 409.
 
+### 3.6. Showtime Management – tiến độ và code đã làm
+
+**Lưu ý:** Đây là cập nhật mới nhất về tiến độ thực tế; thay cho kế hoạch cũ ghi Buổi 4 đang ở 4.1 khảo sát DB. Người học đã tiếp tục triển khai chức năng Showtime. Không bắt đầu lại 4.1 hoặc map entity từ đầu.
+
+#### GET Showtime
+- Service lấy danh sách Showtime có `Include(s => s.Movie)`, `Include(s => s.Room)`, `ThenInclude(r => r.Cinema)`, `AsNoTracking()` và `ToListAsync()`.
+- Controller map sang `ShowtimeResponse` với các thông tin: Id, MovieTitle, RoomName, CinemaName, StartTime, EndTime, Price.
+
+#### POST Showtime – đã code và kiểm thử
+- Request DTO `CreateShowtimeRequest`: MovieId, RoomId, StartTime, Price; validation ID và giá.
+- Service xác thực Movie và Room tồn tại; tự tính EndTime dựa trên thời lượng phim, không lấy EndTime từ client.
+- Dùng transaction `ReadCommitted`, khóa Room bằng `SELECT ... FOR UPDATE`, kiểm tra lịch chồng lấn trong cùng phòng.
+- Kiểm tra thời gian kết thúc của lịch cũ: dùng EndTime nếu có, hoặc `StartTime + Movie.Duration` nếu EndTime null (hỗ trợ dữ liệu legacy).
+- Nếu trùng lịch, ném `ShowtimeConflictException`; Controller trả **409 Conflict**. Movie/Room không hợp lệ trả **400 Bad Request**.
+- Tạo Showtime, `SaveChangesAsync()`, commit; sau commit truy vấn lại entity kèm Movie/Room/Cinema để trả response đầy đủ.
+- POST đã kiểm thử: ID âm bị validation trả 400; Movie không tồn tại trả 400; tạo hợp lệ lưu DB và response có tên Movie/Room/Cinema.
+
+#### PUT Showtime – code hiện tại
+- Route Controller: `PUT /showtimes/{id:int}`.
+- Service `UpdateShowtimeAsync(id, request)`:
+  1. Xác thực Movie và Room.
+  2. Tính EndTime từ Movie.Duration.
+  3. Mở transaction `ReadCommitted`.
+  4. Khóa Showtime cần sửa bằng `LockShowtimeAsync(id)` (`SELECT ... FOR UPDATE`); không có thì rollback và trả null.
+  5. Khóa Room đích bằng `LockRoomAsync`.
+  6. Gọi `HasScheduleConflictAsync(..., excludeShowtimeId: id)` để không tự coi lịch đang sửa là lịch xung đột.
+  7. Cập nhật MovieId, RoomId, StartTime, EndTime, Price; SaveChanges và Commit.
+  8. Query lại sau Commit (ngoài try/catch transaction) kèm Movie/Room/Cinema và trả Showtime.
+- Controller PUT: null → 404; success → map `ShowtimeResponse` và 200; `ShowtimeConflictException` → 409; `ArgumentException` → 400.
+- Đã review cấu trúc Controller và Service; đánh giá logic Controller phù hợp. Cần Build/test Postman xác nhận kết quả.
+- Test PUT đầu tiên nên giữ MovieId, RoomId, StartTime của Showtime hiện có và chỉ thay Price, để tránh tạo xung đột lịch. PUT là cập nhật đầy đủ nên vẫn gửi đủ các field DTO.
+- Không mặc định ID 55 hoặc MovieId/RoomId/time đã nhớ là còn đúng; hãy lấy dữ liệu thực tế hiện tại.
+
+#### Conflict checker và locking
+- `HasScheduleConflictAsync(roomId, newStart, newEnd, excludeShowtimeId)` lấy các lịch trong cùng Room có StartTime trước newEnd, loại lịch đang sửa khi có exclude ID, rồi tính existingEnd và kiểm tra overlap:
+  `newStart < existingEnd && newEnd > existingStart`.
+- `LockShowtimeAsync(id)` dùng `SELECT * FROM showtimes WHERE id = {id} FOR UPDATE` và `FirstOrDefaultAsync()` để có thể trả null.
+- `LockRoomAsync(roomId)` khóa Room đích để các thao tác ghi lịch dùng cùng cơ chế có thể tuần tự hóa việc kiểm tra lịch theo phòng.
+- Đây là cơ chế bảo vệ cạnh tranh ở mức transaction/row-lock; không tuyên bố bảo đảm tuyệt đối cho mọi writer nếu các thao tác khác không dùng cùng locking path. PUT hiện chưa có optimistic concurrency token, nên các cập nhật tuần tự vẫn có thể là last-write-wins.
+
+#### Bài học Controller: UpdateMovie ngắn hơn UpdateShowtime
+- `UpdateMovie()` đơn giản hơn: nhận ID/DTO, tạo Movie, gọi Service, null → 404, success → 200.
+- `UpdateShowtime()` dài hơn vì cần xử lý exception nghiệp vụ (400/409), và map `ShowtimeResponse` gồm MovieTitle, RoomName, CinemaName cùng thông tin giờ/giá.
+- Độ dài code khác nhau phản ánh độ phức tạp nghiệp vụ. Không cần cố làm Controller ngắn bằng cách giấu logic; có thể refactor mapping sang helper riêng khi cần, nhưng hiện ưu tiên hiểu rõ flow.
+
+
 ## 4. Những lỗi thực tế đã sửa — tránh lặp lại
 
 1. `DateOnly` từ MySQL `DATE`: Oracle provider gây lỗi đọc `DateTime`/`DateOnly`; đã dùng `.HasConversion(...)`.
@@ -170,30 +215,53 @@ entity.Property(s => s.ReleaseDate)
 - **3.5 HTTP Error:** `ResourceConflictException`, xử lý FK error 1451, Build OK, 404/204/GET lại 404 đạt. 409 chưa test tích hợp.
 - **3.6 End-to-End:** Build Succeeded; **POST 201, GET 200, PUT 200, POST invalid 400, DELETE 204, GET after delete 404**, tất cả đạt; **10/10**. Xác nhận buổi 3 100%.
 
-## 6. VIỆC PHẢI LÀM TIẾP NGAY — BUỔI 4, BÀI 4.1
+### Buổi 4 — Showtime Management (đang học)
+- GET Showtime đã hoàn thành.
+- POST Showtime đã code, Build/test thành công các trường hợp validation và tạo lịch hợp lệ.
+- PUT Showtime: DTO/Interface/Service/Controller đã viết và được review; đang ở bước Build + test Postman.
+- DELETE Showtime, kiểm thử tích hợp đầy đủ, tổng kết và commit: chưa làm.
+- Bài học mới: Transaction, `ReadCommitted`, `SELECT ... FOR UPDATE`, kiểm tra overlap, tính EndTime dựa trên Movie.Duration, xử lý lịch legacy có EndTime null.
+- **Điểm dừng chính xác khi chuyển chat: test PUT Showtime trên Postman.**
 
-Trợ lý mới cần bắt đầu bằng việc nhận **kết quả cấu trúc DB** người học sẽ gửi, **không yêu cầu làm lại Buổi 1–3**.
 
-Trong DBeaver, chọn database thực hành đúng kết nối, chạy:
+## 6. VIỆC PHẢI LÀM TIẾP NGAY — TEST PUT SHOWTIME
 
-```sql
-USE cinema_booking_practice;
-SHOW TABLES;
+Trợ lý mới **không được bắt người học quay lại khảo sát DB hoặc học lại Buổi 1–3**. Tiếp tục từ việc kiểm thử PUT đang dở.
+
+### Bước tiếp theo
+1. Build Solution trong Visual Studio; nếu lỗi, gửi Error List và review trước.
+2. Chạy `CinemaBooking.Api`.
+3. Trong Postman, gửi PUT tới `{{baseUrl}}/showtimes/{id}` với ID Showtime thực có.
+4. Lấy MovieId, RoomId, StartTime hiện tại từ DB/API/SQL đáng tin; test lần đầu chỉ đổi Price, giữ nguyên các trường lịch để tránh conflict. Request vẫn gửi đủ DTO fields.
+5. Kiểm tra response 200 và dữ liệu cập nhật; kiểm tra lại DB.
+6. Sau test thành công, test ID không tồn tại → 404, lịch trùng → 409, request validation/ID Movie hoặc Room sai → 400 (nếu logic Controller/Service hiện tại trả như vậy).
+7. Khi PUT đã đạt, chuyển DELETE Showtime; sau đó integration test và tổng kết Buổi 4.
+8. Chỉ commit khi chức năng hoàn thành và tests đã xác nhận.
+
+### Request mẫu (phải thay bằng dữ liệu thật)
+
+```http
+PUT {{baseUrl}}/showtimes/{showtimeId}
+Content-Type: application/json
 ```
 
-Nếu có bảng `showtimes`, tiếp tục:
-
-```sql
-DESCRIBE showtimes;
-SHOW CREATE TABLE showtimes;
-SELECT * FROM showtimes LIMIT 5;
+```json
+{
+  "movieId": 1,
+  "roomId": 2,
+  "startTime": "2026-12-01T18:00:00",
+  "price": 90000
+}
 ```
 
-Nếu tên bảng khác, thay bằng tên bảng thật tìm trong `SHOW TABLES`. Khuyến khích người học cung cấp Java Entity tương ứng từ Spring Boot gốc (ví dụ `Showtime.java`, nếu thực sự có).
+Các giá trị trên chỉ là ví dụ; không sử dụng trực tiếp nếu không khớp DB.
 
-**Sau khi thấy DB schema + source Java:** đối chiếu cột/nullable/PK/FK/enum/time, hướng dẫn viết Entity C#, khai báo DbSet và EF Core relationship, dùng `Include` nếu phù hợp, rồi xây API thực tế. Không chạy migrations/chỉnh FK trên DB gốc khi chưa xác minh.
+### Tiến độ Buổi 4
+- GET + POST: hoàn thành.
+- PUT code: hoàn thành, kiểm thử đang chờ.
+- DELETE: chưa bắt đầu.
+- Integration tests + tổng kết + commit: chưa bắt đầu.
 
-**Thanh tiến độ tiếp theo:** Buổi 4 = **0% (0/6)**, đang học **4.1**. Khi đạt 4.1 → 17%; 4.2 → 33%; 4.3 → 50%; 4.4 → 67%; 4.5 → 83%; 4.6 → 100%.
 
 ## 7. Các file nên đính kèm khi chuyển tài khoản
 
@@ -212,8 +280,6 @@ File `.md` này giúp nhớ tiến độ, nhưng **không thay thế source code
 
 ## 8. Prompt ngắn để dán vào ChatGPT tài khoản mới
 
-> Tôi đang học C#/.NET để thực tập bằng cách chuyển dự án Spring Boot Cinema Booking sang ASP.NET Core + EF Core + MySQL. Hãy đọc kỹ file `CINEMA_BOOKING_HANDOFF.md` đính kèm và sử dụng nó làm tiến độ học chính thức. Buổi 1–3 hoàn thành 100%. Hiện tôi ở **Buổi 4, Bài 4.1 — khảo sát bảng và quan hệ suất chiếu trong database**. Tôi muốn **80% thực hành, 20% lý thuyết**, giải thích ngắn, ví dụ cụ thể, tự code rồi được review/chấm theo thang 10, kèm tiến độ từng buổi. Hãy bám sát repository gốc https://github.com/HoangDung05/cinema-booking, không sáng tác thêm chức năng hay bắt tôi học lại. Tiếp tục từ Bài 4.1, chờ tôi cung cấp kết quả `SHOW TABLES` và schema tương ứng trước khi map EF Core.
+> Tôi đang học C#/.NET để thực tập bằng cách chuyển dự án Spring Boot Cinema Booking sang ASP.NET Core + EF Core + MySQL. Hãy đọc kỹ file `CINEMA_BOOKING_HANDOFF_UPDATED.md` đính kèm và dùng làm tiến độ học chính thức. Buổi 1–3 đã hoàn thành 100%, không học lại. Buổi 4 đang làm Showtime Management: GET và POST đã hoàn thành; PUT DTO/Interface/Service/Controller đã code và được review, **đang cần Build và test Postman**. Tiếp tục đúng bước này, rồi mới làm DELETE, integration tests, tổng kết và commit. Hướng dẫn bằng tiếng Việt, ngắn gọn, khoảng 80% thực hành; giao từng nhiệm vụ, để tôi tự làm, review file/code hoặc ảnh Postman và chấm thang 10. Bám sát repository gốc https://github.com/HoangDung05/cinema-booking; không tự sáng tác chức năng, không chạy migration hoặc sửa schema DB tùy tiện, không bắt tôi học lại những phần đã hoàn thành. Khi cần thông tin chưa có, hỏi file/schema/kết quả SQL thay vì đoán.
 
----
-
-**Ghi chú về độ chính xác:** Tài liệu này tổng hợp từ nội dung cuộc trò chuyện và những file code đã được gửi/đọc. Không phải bản xuất nguyên văn toàn bộ lịch sử. Những điểm như cổng MySQL đang dùng, mã nguồn thay đổi sau lần nộp gần nhất, cấu trúc thực tế của bảng suất chiếu cần xác nhận lại từ dự án hiện hành.
+**Ghi chú về độ chính xác:** Tài liệu này tổng hợp từ nội dung cuộc trò chuyện và những file code đã được gửi/đọc. Không phải bản xuất nguyên văn toàn bộ lịch sử. Những điểm như cổng MySQL đang dùng, mã nguồn mới nhất, trạng thái Build/test PUT, và dữ liệu DB thực tế cần xác nhận lại khi tiếp tục.

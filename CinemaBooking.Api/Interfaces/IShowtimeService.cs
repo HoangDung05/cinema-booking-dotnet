@@ -7,5 +7,6 @@ namespace CinemaBooking.Api.Interfaces
     {
         Task<List<Showtime>> GetAllShowtimesAsync();
         Task<Showtime> CreateShowtimeAsync(CreateShowtimeRequest request);
+        Task<Showtime?> UpdateShowtimeAsync(int id, UpdateShowtimeRequest request);
     }
 }

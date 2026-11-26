@@ -13,7 +13,7 @@ namespace CinemaBooking.Api.DTOs.Showtimes
         [Required]
         public DateTime? StartTime { get; set; }
 
-        [Range(typeof(decimal), "0.01", "10000000")]
+        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
         public Decimal Price { get; set; }
     }
 }

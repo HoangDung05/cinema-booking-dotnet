@@ -37,10 +37,10 @@ namespace CinemaBooking.Api.Services
             return await _context.Rooms.AnyAsync(r => r.Id == roomId);
         }
 
-        private async Task<bool> HasScheduleConflictAsync(int roomId, DateTime newStart, DateTime newEnd)
+        private async Task<bool> HasScheduleConflictAsync(int roomId, DateTime newStart, DateTime newEnd, int? excludeShowtimeId = null)
         {
             var schedules = await _context.Showtimes
-                .Where(s => s.RoomId == roomId && s.StartTime < newEnd)
+                .Where(s => s.RoomId == roomId && s.StartTime < newEnd &&( s.Id != excludeShowtimeId || excludeShowtimeId == null ))
                 .Select(s => new
                 {
                     s.StartTime,
@@ -87,6 +87,7 @@ namespace CinemaBooking.Api.Services
    
             await using var transaction = await _context.Database
                 .BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            Showtime showtime;
             
             try
             {
@@ -97,7 +98,7 @@ namespace CinemaBooking.Api.Services
                     throw new ShowtimeConflictException("Showtime schedule conflict");
                 }
 
-                var showtime = new Showtime
+                showtime = new Showtime
                 {
                     MovieId = request.MovieId,
                     RoomId = request.RoomId,
@@ -111,19 +112,18 @@ namespace CinemaBooking.Api.Services
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-
-                return await _context.Showtimes
-                    .Include(s => s.Movie)
-                    .Include(s => s.Room)
-                    .ThenInclude(s => s.Cinema)
-                    .AsNoTracking()
-                    .SingleAsync(s => s.Id == showtime.Id);
             }
             catch
             {
                 await transaction.RollbackAsync();
                 throw;
             }
+            return await _context.Showtimes
+                    .Include(s => s.Movie)
+                    .Include(s => s.Room)
+                    .ThenInclude(s => s.Cinema)
+                    .AsNoTracking()
+                    .SingleAsync(s => s.Id == showtime.Id);
         }
 
         private async Task LockRoomAsync(int roomId)
@@ -131,5 +131,56 @@ namespace CinemaBooking.Api.Services
             await _context.Rooms.FromSqlInterpolated($"SELECT * FROM rooms WHERE id = {roomId} FOR UPDATE").SingleAsync();
         }
 
+        private async Task<Showtime?> LockShowtimeAsync(int showtimeId)
+        {
+            return await _context.Showtimes.FromSqlInterpolated($"SELECT * FROM showtimes WHERE id = {showtimeId} FOR UPDATE").FirstOrDefaultAsync();
+        }
+
+        public async Task<Showtime?> UpdateShowtimeAsync(int id, UpdateShowtimeRequest request)
+        {
+            if (!await MovieExistsAsync(request.MovieId))
+                throw new ArgumentException("Movie not found");
+            if (!await RoomExistsAsync(request.RoomId))
+                throw new ArgumentException("Room not found");
+            DateTime endTime = (await CalculateEndTimeAsync(
+                request.MovieId,
+                request.StartTime!.Value))
+                ?? throw new ArgumentException("Movie not found");
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            try
+            {
+                var existingShowtime = await LockShowtimeAsync(id);
+
+                if (existingShowtime == null)
+                {
+                    await transaction.RollbackAsync();
+                    return null;
+                }
+                await LockRoomAsync(request.RoomId);
+                if (await HasScheduleConflictAsync(request.RoomId, request.StartTime.Value, endTime, id))
+                {
+                    throw new ShowtimeConflictException("Showtime schedule conflict");
+                }
+                existingShowtime.MovieId = request.MovieId;
+                existingShowtime.RoomId = request.RoomId;
+                existingShowtime.StartTime = request.StartTime!.Value;
+                existingShowtime.EndTime = endTime;
+                existingShowtime.Price = request.Price;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            return await _context.Showtimes
+                    .Include(s => s.Movie)
+                    .Include(s => s.Room)
+                    .ThenInclude(s => s.Cinema)
+                    .AsNoTracking()
+                    .SingleAsync(s => s.Id == id);
+        }
     }
 }
