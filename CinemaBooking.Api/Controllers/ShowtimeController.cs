@@ -1,4 +1,5 @@
 ﻿using CinemaBooking.Api.DTOs.Showtimes;
+using CinemaBooking.Api.Exceptions;
 using CinemaBooking.Api.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,6 +29,34 @@ namespace CinemaBooking.Api.Controllers
                 Price = s.Price
             }).ToList();
             return Ok(response);
+        }
+        
+        [HttpPost]
+        public async Task<ActionResult<ShowtimeResponse>> CreateShowtime([FromBody] CreateShowtimeRequest request)
+        {
+            try
+            {
+                var showtime = await _showtimeService.CreateShowtimeAsync(request);
+                var response = new ShowtimeResponse
+                {
+                    Id = showtime.Id,
+                    StartTime = showtime.StartTime,
+                    EndTime = showtime.EndTime,
+                    Price = showtime.Price,
+                    MovieTitle = showtime.Movie.Title,
+                    RoomName = showtime.Room.Name,
+                    CinemaName = showtime.Room.Cinema.Name
+                };
+                return StatusCode(201, response);
+            }
+            catch (ShowtimeConflictException ex)
+            {
+                return Conflict(new { Message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }
