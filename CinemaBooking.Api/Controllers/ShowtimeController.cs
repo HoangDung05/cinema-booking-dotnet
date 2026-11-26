@@ -90,5 +90,16 @@ namespace CinemaBooking.Api.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteShowtime(int id)
+        {
+            var showtime = await _showtimeService.DeleteShowtimeAsync(id);
+            if (!showtime)
+            {
+                return NotFound();
+            }
+            return NoContent();
+        }
     }
 }

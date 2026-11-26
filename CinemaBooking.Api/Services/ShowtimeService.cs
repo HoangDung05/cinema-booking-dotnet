@@ -182,5 +182,29 @@ namespace CinemaBooking.Api.Services
                     .AsNoTracking()
                     .SingleAsync(s => s.Id == id);
         }
+        public async Task<bool> DeleteShowtimeAsync(int id)
+        {
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            try
+            {
+                var showtime = await LockShowtimeAsync(id);
+                if (showtime == null)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+                _context.Showtimes.Remove(showtime);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            
+        }
     }
 }
