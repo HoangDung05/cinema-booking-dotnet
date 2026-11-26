@@ -14,6 +14,7 @@ namespace CinemaBooking.Api.Data
         public DbSet<Cinema> Cinemas { get; set; } = null!;
         public DbSet<Room> Rooms { get; set; } = null!;
         public DbSet<Showtime> Showtimes { get; set; } = null!;
+        public DbSet<Seat> Seats { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -87,6 +88,20 @@ namespace CinemaBooking.Api.Data
                       .HasForeignKey(s => s.RoomId)
                       .OnDelete(DeleteBehavior.Restrict);
                 entity.HasIndex(s => new { s.RoomId, s.StartTime }).IsUnique();
+            });
+
+            modelBuilder.Entity<Seat>(entity => 
+            { 
+                entity.ToTable("seats");
+                entity.HasKey(s => s.Id);
+                entity.Property(s => s.Id).ValueGeneratedOnAdd();
+                entity.Property(s => s.SeatNumber).HasColumnName("seat_number").HasMaxLength(10).IsRequired();
+                entity.Property(s => s.RoomId).HasColumnName("room_id").IsRequired();
+                entity.HasOne(s => s.Room)
+                      .WithMany(r => r.Seats)
+                      .HasForeignKey(s => s.RoomId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(s => new { s.RoomId, s.SeatNumber }).IsUnique();
             });
         }
 
